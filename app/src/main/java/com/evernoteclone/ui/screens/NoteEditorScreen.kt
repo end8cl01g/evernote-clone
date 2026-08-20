@@ -1,5 +1,7 @@
 package com.evernoteclone.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
@@ -7,6 +9,8 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -315,41 +319,87 @@ private fun RecordDialog(onDismiss: () -> Unit, onSaved: (String, String) -> Uni
     var filePath by remember { mutableStateOf<String?>(null) }
     var elapsed by remember { mutableStateOf(0) }
     var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            startRecording(context,
+                recorderSetup = { recorder = it },
+                onStarted = { recording = true },
+                onOk = { filePath = it },
+                onFail = { Toast.makeText(context, "錄音失敗：$it", Toast.LENGTH_SHORT).show() })
+        } else {
+            Toast.makeText(context, "需要麥克風權限才能錄音", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     LaunchedEffect(recording) {
         while (recording) { kotlinx.coroutines.delay(1000); elapsed++ }
     }
 
+    val dismiss = {
+        try { recorder?.stop() } catch (e: Exception) {}
+        recorder?.release(); recorder = null
+        onDismiss()
+    }
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismiss,
         title = { Text(if (recording) "錄音中… ${elapsed}s" else if (filePath != null) "錄音完成" else "錄音") },
         text = {
             Column {
                 if (!recording && filePath == null) {
                     Button(onClick = {
-                        val f = File(context.cacheDir, "rec_${System.currentTimeMillis()}.m4a")
-                        val mr = if (Build.VERSION.SDK_INT >= 31) MediaRecorder(context) else @Suppress("DEPRECATION") MediaRecorder()
-                        mr.setAudioSource(MediaRecorder.AudioSource.MIC)
-                        mr.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                        mr.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                        mr.setOutputFile(f.absolutePath)
-                        mr.prepare()
-                        mr.start()
-                        recorder = mr
-                        filePath = f.absolutePath
-                        recording = true
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                            startRecording(context,
+                                recorderSetup = { recorder = it },
+                                onStarted = { recording = true },
+                                onOk = { filePath = it },
+                                onFail = { Toast.makeText(context, "錄音失敗：$it", Toast.LENGTH_SHORT).show() })
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
                     }) { Text("● 開始錄音") }
                 }
                 if (recording) {
                     Button(onClick = {
-                        recorder?.stop(); recorder?.release(); recorder = null
+                        try { recorder?.stop() } catch (e: Exception) {}
+                        recorder?.release(); recorder = null
                         recording = false
                     }) { Text("■ 停止") }
                 }
                 if (filePath != null && !recording) {
-                    Button(onClick = { onSaved(filePath!!, File(filePath!!).name) }, colors = ButtonDefaults.buttonColors(containerColor = Green)) { Text("✓ 儲存") }
+                    Button(
+                        onClick = { onSaved(Uri.fromFile(File(filePath!!)).toString(), File(filePath!!).name) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Green),
+                    ) { Text("✓ 儲存") }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(if (filePath != null) "捨棄" else "取消") } },
+        confirmButton = { TextButton(onClick = dismiss) { Text(if (filePath != null) "捨棄" else "取消") } },
     )
+}
+
+private fun startRecording(
+    context: android.content.Context,
+    recorderSetup: (MediaRecorder) -> Unit,
+    onStarted: () -> Unit,
+    onOk: (String) -> Unit,
+    onFail: (String) -> Unit,
+) {
+    try {
+        val f = File(context.cacheDir, "rec_${System.currentTimeMillis()}.m4a")
+        val mr = if (Build.VERSION.SDK_INT >= 31) MediaRecorder(context) else @Suppress("DEPRECATION") MediaRecorder()
+        mr.setAudioSource(MediaRecorder.AudioSource.MIC)
+        mr.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        mr.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        mr.setOutputFile(f.absolutePath)
+        mr.prepare()
+        mr.start()
+        recorderSetup(mr)
+        onStarted()
+        onOk(f.absolutePath)
+        Toast.makeText(context, "錄音中…", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        onFail(e.message ?: e.javaClass.simpleName)
+    }
 }
