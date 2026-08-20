@@ -68,7 +68,7 @@ class Repository(private val db: AppDatabase, private val context: Context) {
     }
     fun saveMessageToNote(threadId: String, message: Message) = scope.launch {
         if (message.savedToNote) return@launch
-        val nbId = ensureNotebook("訊息", Color.rgb(33, 150, 243))
+        val nbId = ensureNotebook("訊息", Color.rgb(33, 150, 243).toLong())
         db.noteDao().insert(
             Note(
                 title = "訊息：${message.sender}",
@@ -188,10 +188,10 @@ class Repository(private val db: AppDatabase, private val context: Context) {
     private fun seedIfEmpty() {
         scope.launch {
             if (db.notebookDao().getAll().isNotEmpty()) return@launch
-            val work = Notebook(name = "工作", color = Color.rgb(47, 190, 79), stack = null)
-            val meeting = Notebook(name = "會議", color = Color.rgb(251, 140, 0))
-            val personal = Notebook(name = "個人", color = Color.rgb(142, 36, 170))
-            val life = Notebook(name = "生活", color = Color.rgb(33, 150, 243))
+            val work = Notebook(name = "工作", color = Color.rgb(47, 190, 79).toLong(), stack = null)
+            val meeting = Notebook(name = "會議", color = Color.rgb(251, 140, 0).toLong())
+            val personal = Notebook(name = "個人", color = Color.rgb(142, 36, 170).toLong())
+            val life = Notebook(name = "生活", color = Color.rgb(33, 150, 243).toLong())
             db.notebookDao().insert(work)
             db.notebookDao().insert(meeting)
             db.notebookDao().insert(personal)
@@ -230,11 +230,11 @@ class Repository(private val db: AppDatabase, private val context: Context) {
                 )
             )
 
-            val g = MessageThread(title = "工作群組", color = Color.rgb(47, 190, 79))
+            val g = MessageThread(title = "工作群組", color = Color.rgb(47, 190, 79).toLong())
             db.messageThreadDao().insert(g)
             db.messageDao().insert(Message(threadId = g.id, sender = "小明", text = "明天 demo 準備好了嗎？", sentAt = System.currentTimeMillis() - 3600_000L))
             db.messageDao().insert(Message(threadId = g.id, sender = "我", text = "準備好了，已同步 ✅", sentAt = System.currentTimeMillis() - 1800_000L, isMine = true))
-            val b = MessageThread(title = "專案 B 討論", color = Color.rgb(0, 137, 123))
+            val b = MessageThread(title = "專案 B 討論", color = Color.rgb(0, 137, 123).toLong())
             db.messageThreadDao().insert(b)
             db.messageDao().insert(Message(threadId = b.id, sender = "我", text = "會議紀錄已更新 ✅", sentAt = System.currentTimeMillis() - 7200_000L, isMine = true))
 

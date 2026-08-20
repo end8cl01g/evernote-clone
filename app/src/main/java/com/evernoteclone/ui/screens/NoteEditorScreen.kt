@@ -237,7 +237,7 @@ fun NoteEditorScreen(
             text = {
                 Column {
                     notebooks.forEach {
-                        Text(if (it.id == notebookId) "✓ " else "" + it.name, modifier = Modifier.fillMaxWidth().clickable { notebookId = it.id; showNb = false }.padding(vertical = 8.dp))
+                        Text((if (it.id == notebookId) "✓ " else "") + it.name, modifier = Modifier.fillMaxWidth().clickable { notebookId = it.id; showNb = false }.padding(vertical = 8.dp))
                     }
                     HorizontalDivider()
                     OutlinedTextField(newNbName, { newNbName = it }, label = { Text("新筆記本名稱") }, modifier = Modifier.fillMaxWidth())
@@ -261,7 +261,7 @@ fun NoteEditorScreen(
             text = {
                 Column {
                     tags.forEach {
-                        Text(if (it.id in tagIds) "✓ " else "" + it.name, modifier = Modifier.fillMaxWidth().clickable {
+                        Text((if (it.id in tagIds) "✓ " else "") + it.name, modifier = Modifier.fillMaxWidth().clickable {
                             tagIds = if (it.id in tagIds) tagIds - it.id else tagIds + it.id
                         }.padding(vertical = 6.dp))
                     }

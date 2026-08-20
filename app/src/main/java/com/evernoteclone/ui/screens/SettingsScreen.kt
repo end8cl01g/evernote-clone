@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evernoteclone.ui.theme.Amber
@@ -90,7 +92,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
             }
             // 密碼鎖
             item {
-                SettingRow("密碼鎖", value = if (s?.pinEnabled == true) "已啟用 ›" else "未啟用 ›") { showPin = true }
+                SettingRow("密碼鎖", value = if (s?.pinEnabled == true) "已啟用 ›" else "未啟用 ›", onClick = { showPin = true })
             }
             // 通知
             item {
@@ -102,17 +104,18 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 }
             }
             // 視圖 / 排序
-            item { SettingRow("預設視圖", value = if (s?.viewMode == "grid") "網格 ›" else "列表 ›") { vm.repo.setViewMode(if (s?.viewMode == "grid") "list" else "grid") } }
-            item { SettingRow("預設排序", value = "更新時間 ›") { } }
+            item { SettingRow("預設視圖", value = if (s?.viewMode == "grid") "網格 ›" else "列表 ›", onClick = { vm.repo.setViewMode(if (s?.viewMode == "grid") "list" else "grid") }) }
+            item { SettingRow("預設排序", value = "更新時間 ›", onClick = { }) }
             item { Text("同步引擎", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp)) }
             // 同步狀態 + 立即同步
             item {
                 SettingRow(
                     "⟳ 立即同步",
                     value = if ((s?.pendingSyncCount ?: 0) > 0) "${s?.pendingSyncCount ?: 0} 待同步" else "已同步",
-                ) {
-                    vm.repo.syncNow { n -> Toast.makeText(context, "同步完成（$n 筆變更）", Toast.LENGTH_SHORT).show() }
-                }
+                    onClick = {
+                        vm.repo.syncNow { n -> Toast.makeText(context, "同步完成（$n 筆變更）", Toast.LENGTH_SHORT).show() }
+                    },
+                )
             }
             item {
                 Text(
@@ -123,14 +126,14 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 )
             }
             // 匯出 / 匯入
-            item { SettingRow("⬆ 匯出完整備份", value = "JSON ›") { exportLauncher.launch("evernote-backup-${System.currentTimeMillis()}.json") } }
-            item { SettingRow("⬇ 匯入備份", value = "JSON ›") { importLauncher.launch(arrayOf("application/json")) } }
+            item { SettingRow("⬆ 匯出完整備份", value = "JSON ›", onClick = { exportLauncher.launch("evernote-backup-${System.currentTimeMillis()}.json") }) }
+            item { SettingRow("⬇ 匯入備份", value = "JSON ›", onClick = { importLauncher.launch(arrayOf("application/json")) }) }
             item { Text("其他", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp)) }
             item {
-                SettingRow("關於", value = "綠筆記 v1.0（Kotlin + Compose + Room）") {}
+                SettingRow("關於", value = "綠筆記 v1.0（Kotlin + Compose + Room）", onClick = { })
             }
             item {
-                SettingRow("清除資料（恢復種子）", tint = Red) { reset() }
+                SettingRow("清除資料（恢復種子）", tint = Red, onClick = { reset() })
             }
         }
     }
@@ -144,7 +147,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                     pinInput, { pinInput = it },
                     label = { Text("4 位數字密碼") },
                     singleLine = true,
-                    keyboardOptions = androidx.compose.ui.text.input.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 )
             },
             confirmButton = {
@@ -173,8 +176,8 @@ private fun SettingRow(
     label: String,
     value: String? = null,
     tint: androidx.compose.ui.graphics.Color? = null,
+    onClick: () -> Unit = {},
     trailing: (@Composable () -> Unit)? = null,
-    onClick: () -> Unit,
 ) {
     Row(
         Modifier
