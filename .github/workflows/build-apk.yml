@@ -1,0 +1,57 @@
+name: Build Release APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: 生成 debug keystore（release 無 secrets 時回退簽名）
+        run: |
+          mkdir -p $HOME/.android
+          keytool -genkeypair -v -storetype PKCS12 \
+            -keystore $HOME/.android/debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      # 注意：secrets context 不能用在 if: 條件式，改用 env 傳遞 + shell 判斷
+      - name: 解碼 release keystore（未配置 secrets 時自動略過）
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/release.keystore
+            echo "ANDROID_KEYSTORE_FILE=release.keystore" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "::notice::已配置正式簽名 keystore"
+          else
+            echo "::notice::未配置 secrets，將使用 debug 簽名（APK 仍可安裝）"
+          fi
+
+      - name: 構建 Release APK（防 OOM：-Xmx2g、workers 2、daemon off 已於 gradle.properties）
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease --no-daemon --max-workers=2
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evernote-clone-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
