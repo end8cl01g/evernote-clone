@@ -1,6 +1,7 @@
 package com.evernoteclone.ui.screens
 
 import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.view.CameraController
@@ -61,7 +62,6 @@ fun CameraScreen(
                 PreviewView(ctx).apply {
                     controller.bindToLifecycle(lifecycleOwner)
                     controller.cameraSelector = androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
-                    controller.setImageAnalysisMode(CameraController.IMAGE_ANALYSIS_MODE_NONE)
                     this.controller = controller
                     scaleType = PreviewView.ScaleType.FILL_CENTER
                 }
@@ -98,7 +98,7 @@ fun CameraScreen(
                                 val uri = file.toURI().toString()
                                 if (mode == "scan") {
                                     val recognizer = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
-                                    val image = InputImage.fromFilePath(context, file)
+                                    val image = InputImage.fromFilePath(context, Uri.fromFile(file))
                                     recognizer.process(image)
                                         .addOnSuccessListener { result ->
                                             val text = result.text

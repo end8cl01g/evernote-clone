@@ -140,9 +140,9 @@ fun NoteListScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     gridItems(sorted, key = { it.id }) { n ->
-                        NoteCard(n, notebooks.firstOrNull { it.id == n.notebookId }, n.tagIds.map(tagName)) {
+                        NoteCard(n, notebooks.firstOrNull { it.id == n.notebookId }, n.tagIds.map(tagName), onClick = {
                             onOpenNote(n.id)
-                        }
+                        })
                     }
                 }
             } else {

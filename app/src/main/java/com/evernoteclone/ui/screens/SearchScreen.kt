@@ -87,7 +87,7 @@ fun SearchScreen(vm: AppViewModel, onBack: () -> Unit, onOpenNote: (String) -> U
                     item { EmptyState("沒有符合「$q」的筆記") }
                 }
                 items(results, key = { it.id }) { n ->
-                    NoteCard(n, notebooks.firstOrNull { it.id == n.notebookId }, n.tagIds.map(tagName)) { onOpenNote(n.id) }
+                    NoteCard(n, notebooks.firstOrNull { it.id == n.notebookId }, n.tagIds.map(tagName), onClick = { onOpenNote(n.id) })
                 }
             }
         }

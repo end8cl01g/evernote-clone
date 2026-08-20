@@ -98,10 +98,10 @@ fun NoteViewScreen(vm: AppViewModel, noteId: String, onBack: () -> Unit, onEdit:
                     ).forEach { (g, l) ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f).clickable(onClick = g.second),
+                            modifier = Modifier.weight(1f).clickable(onClick = l),
                         ) {
-                            Text(g.first.first, fontSize = 16.sp, color = if (g.first.second == "刪除") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
-                            Text(g.first.second, fontSize = 11.sp, color = if (g.first.second == "刪除") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
+                            Text(g.first, fontSize = 16.sp, color = if (g.second == "刪除") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
+                            Text(g.second, fontSize = 11.sp, color = if (g.second == "刪除") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -160,14 +160,14 @@ fun NoteViewScreen(vm: AppViewModel, noteId: String, onBack: () -> Unit, onEdit:
             text = {
                 Column {
                     listOf(
-                        "📌 ${if (n.pinned) "取消釘選" else "釘選到頂部"}" to { vm.repo.togglePin(n.id) },
+                        "📌 ${if (n.pinned) "取消釘選" else "釘選到頂部"}" to { vm.repo.togglePin(n.id); Unit },
                         "ℹ️ 筆記資訊" to { showMenu = false; showInfo = true },
                         "⏰ 提醒（立即通知測試）" to {
                             NotificationHelper.scheduleReminder(context, n.id, n.title, System.currentTimeMillis() + 5_000L)
                             showMenu = false
                         },
                     ).forEach { (l, a) ->
-                        Text(l, modifier = Modifier.fillMaxWidth().clickable(a).padding(vertical = 8.dp))
+                        Text(l, modifier = Modifier.fillMaxWidth().clickable(onClick = a).padding(vertical = 8.dp))
                     }
                 }
             },
